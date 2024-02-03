@@ -1,15 +1,12 @@
 "use client";
 import React from "react";
+import { SignOut } from "../auth/logout/actions";
 import getUser from "@/utils/supabase/getUser";
 
-import { useRouter } from "next/navigation";
-import { SignOut } from "./auth/login/actions";
-
-const page = () => {
+const ProtectedPage = () => {
   const user = getUser();
-
   return (
-    <>
+    <div className="dark:bg-gray-800 dark:text-white flex flex-col">
       {user ? (
         <>
           <p>{`username: ${user?.user_metadata?.full_name}`}</p>
@@ -18,18 +15,11 @@ const page = () => {
       ) : (
         <p>Loading ...</p>
       )}
-
-      <br />
-
-      <button
-        onClick={() => {
-          SignOut();
-        }}
-      >
+      <button className="" onClick={() => SignOut()}>
         Log out
       </button>
-    </>
+    </div>
   );
 };
 
-export default page;
+export default ProtectedPage;
