@@ -4,13 +4,10 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-  console.log("here");
   const { searchParams, origin } = new URL(request.url);
   const cookieStore = cookies();
-  console.log("here");
 
   const code = searchParams.get("code");
-  console.log("codee", code);
 
   // if "next" is in param, use it in the redirect URL
   const next = searchParams.get("next") ?? "/";
@@ -19,7 +16,9 @@ export async function GET(request: Request) {
     console.log("code", code);
     const supabase = createClient(cookieStore);
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+    console.log("data", data.user.email);
 
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
@@ -28,5 +27,5 @@ export async function GET(request: Request) {
 
   // TODO: Create this page
   // return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-error`);
+  return NextResponse.redirect(`${origin}/auth/login?error=unknown-error`);
 }

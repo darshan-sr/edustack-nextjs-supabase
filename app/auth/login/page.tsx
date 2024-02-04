@@ -3,10 +3,14 @@ import { login } from "./actions";
 import { useState } from "react";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 import { BsStack } from "react-icons/bs";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+  const googleCallbackError = searchParams.get("error");
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -83,6 +87,15 @@ export default function LoginPage() {
                   role="alert"
                 >
                   {error}
+                </div>
+              )}
+
+              {googleCallbackError && !error && (
+                <div
+                  className="p-2  pl-4 mb-2  text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-700 dark:text-red-400"
+                  role="alert"
+                >
+                  {googleCallbackError}
                 </div>
               )}
               <button

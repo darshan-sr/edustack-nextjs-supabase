@@ -17,8 +17,17 @@ export async function login(formData: FormData) {
 
   const { data: adminData } = await supabase
     .from("admin")
-    .select("email")
-    .eq("email", data.email.toLowerCase());
+    .select("admin_email")
+    .eq("admin_email", data.email.toLowerCase());
+
+  const { data: facultydata } = await supabase
+    .from("faculty")
+    .select("faculty_email")
+    .eq("faculty_email", data.email.toLowerCase());
+  const { data: studentdata } = await supabase
+    .from("student")
+    .select("student_email")
+    .eq("student_email", data.email.toLowerCase());
 
   if (adminData && adminData.length > 0) {
     console.log("adminData", adminData);
@@ -28,6 +37,22 @@ export async function login(formData: FormData) {
     }
     revalidatePath("/", "layout");
     redirect("/admin");
+  } else if (facultydata && facultydata.length > 0) {
+    console.log("facultydata", facultydata);
+    const { error } = await supabase.auth.signInWithPassword(data);
+    if (error) {
+      return error.message;
+    }
+    revalidatePath("/", "layout");
+    redirect("/faculty");
+  } else if (studentdata && studentdata.length > 0) {
+    console.log("studentdata", studentdata);
+    const { error } = await supabase.auth.signInWithPassword(data);
+    if (error) {
+      return error.message;
+    }
+    revalidatePath("/", "layout");
+    redirect("/student");
   } else {
     return "User not found";
   }

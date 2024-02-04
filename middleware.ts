@@ -22,11 +22,6 @@ export async function middleware(request: NextRequest) {
             value,
             ...options,
           });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
           response.cookies.set({
             name,
             value,
@@ -39,11 +34,6 @@ export async function middleware(request: NextRequest) {
             value: "",
             ...options,
           });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
           response.cookies.set({
             name,
             value: "",
@@ -54,28 +44,77 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data, error } = await supabase.auth.getUser();
+  const getUserType = async (email: string) => {
+    const checkTable = async (table: string, email: string) => {
+      const { data, error } = await supabase
+        .from(table)
+        .select(`${table}_email`)
+        .eq(`${table}_email`, email);
 
-  console.log("data", data);
+      return data && data.length > 0 && !error;
+    };
 
-  if (!data.user && request.nextUrl.pathname.startsWith("/admin")) {
+    const isAdmin = await checkTable("admin", email);
+    const isFaculty = await checkTable("faculty", email);
+    const isStudent = await checkTable("student", email);
+
+    if (isAdmin) {
+      console.log("admin");
+      return "admin";
+    } else if (isFaculty) {
+      console.log("faculty");
+      return "faculty";
+    } else if (isStudent) {
+      console.log("student");
+      return "student";
+    }
+
+    return null;
+  };
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  let userType = null;
+  if (userData?.user?.email) userType = await getUserType(userData.user.email);
+
+  console.log("userType", userType);
+
+  if (userData.user && !userType) {
+    await supabase.auth.signOut();
     return NextResponse.redirect(new URL("/auth/login", request.url));
-  } else if (data.user && request.nextUrl.pathname.startsWith("/auth")) {
-    return NextResponse.redirect(new URL("/admin", request.url));
   }
 
-  return response;
+  // Ensure the user can only access their respective routes
+  if (userType === "admin" && !request.nextUrl.pathname.startsWith("/admin")) {
+    return NextResponse.redirect(new URL("/admin", request.url));
+  } else if (
+    userType === "faculty" &&
+    !request.nextUrl.pathname.startsWith("/faculty")
+  ) {
+    return NextResponse.redirect(new URL("/faculty", request.url));
+  } else if (
+    userType === "student" &&
+    !request.nextUrl.pathname.startsWith("/student")
+  ) {
+    return NextResponse.redirect(new URL("student", request.url));
+  }
+
+  // automatically redirect user to their respective dashboard on homepage visit or auth page
+  if (
+    (request.nextUrl.pathname === "/" ||
+      request.nextUrl.pathname.startsWith("/auth")) &&
+    userData.user
+  ) {
+    return NextResponse.redirect(new URL(`/${userType}`, request.url));
+  }
+
+  return NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
