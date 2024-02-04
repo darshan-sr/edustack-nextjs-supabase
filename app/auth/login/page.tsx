@@ -11,11 +11,9 @@ export default function LoginPage() {
 
   const Search = () => {
     const searchParams = useSearchParams();
-    return <LoginForm />;
+    const googleCallbackError = searchParams.get("error");
+    return <LoginForm googleCallbackError={googleCallbackError} />;
   };
-
-  const searchParams = useSearchParams();
-  const googleCallbackError = searchParams.get("error");
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -29,7 +27,7 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  const LoginForm = () => {
+  const LoginForm = ({ googleCallbackError }: any) => {
     return (
       <section className="bg-gray-50 h-screen  dark:bg-gray-900">
         <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto h-screen ">
