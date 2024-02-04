@@ -9,10 +9,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function Search() {
+  const Search = () => {
     const searchParams = useSearchParams();
     return <LoginForm />;
-  }
+  };
 
   const searchParams = useSearchParams();
   const googleCallbackError = searchParams.get("error");
