@@ -72,40 +72,53 @@ export async function middleware(request: NextRequest) {
     return null;
   };
 
-  const { data: userData, error: userError } = await supabase.auth.getUser();
+  const { data: userData } = await supabase.auth.getUser();
 
   let userType = null;
   if (userData?.user?.email) userType = await getUserType(userData.user.email);
 
   console.log("userType", userType);
 
-  if (userData.user && !userType) {
-    await supabase.auth.signOut();
+  if (request.nextUrl.pathname === "/" && !userType) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
+  } else if (request.nextUrl.pathname === "/" && userType) {
+    if (userType === "student") {
+      return NextResponse.redirect(new URL("/student", request.url));
+    } else if (userType === "faculty") {
+      return NextResponse.redirect(new URL("/faculty", request.url));
+    } else if (userType === "admin") {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
   }
 
-  // Ensure the user can only access their respective routes
-  if (userType === "admin" && !request.nextUrl.pathname.startsWith("/admin")) {
-    return NextResponse.redirect(new URL("/admin", request.url));
+  if (
+    request.nextUrl.pathname.startsWith("/student") ||
+    request.nextUrl.pathname.startsWith("/admin") ||
+    request.nextUrl.pathname.startsWith("/faculty")
+  ) {
+    if (!userType) {
+      return NextResponse.redirect(new URL("/auth/login", request.url));
+    }
+  }
+
+  if (
+    userType === "student" &&
+    (request.nextUrl.pathname.startsWith("/faculty") ||
+      request.nextUrl.pathname.startsWith("/admin"))
+  ) {
+    return NextResponse.redirect(new URL("/student", request.url));
   } else if (
     userType === "faculty" &&
-    !request.nextUrl.pathname.startsWith("/faculty")
+    (request.nextUrl.pathname.startsWith("/student") ||
+      request.nextUrl.pathname.startsWith("/admin"))
   ) {
     return NextResponse.redirect(new URL("/faculty", request.url));
   } else if (
-    userType === "student" &&
-    !request.nextUrl.pathname.startsWith("/student")
+    userType === "admin" &&
+    (request.nextUrl.pathname.startsWith("/student") ||
+      request.nextUrl.pathname.startsWith("/faculty"))
   ) {
-    return NextResponse.redirect(new URL("student", request.url));
-  }
-
-  // automatically redirect user to their respective dashboard on homepage visit or auth page
-  if (
-    (request.nextUrl.pathname === "/" ||
-      request.nextUrl.pathname.startsWith("/auth")) &&
-    userData.user
-  ) {
-    return NextResponse.redirect(new URL(`/${userType}`, request.url));
+    return NextResponse.redirect(new URL("/admin", request.url));
   }
 
   return NextResponse.next({
